@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Document Management – Current Batch</title>
+<style>
+:root{
+  --navy:#0e2147; --navy2:#16295a; --blue:#0b5bf5; --bg:#f3f6fb; --card:#fff;
+  --line:#e3e8f1; --text:#0f1b3d; --muted:#5b6785;
+  --green:#1f9d55; --red:#d92d2d; --amber:#e98a00;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Segoe UI",Inter,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:13px;display:flex;min-height:100vh}
+button{font-family:inherit;cursor:pointer}
+svg{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle}
+
+/* Sidebar */
+.sidebar{width:176px;background:var(--navy);color:#fff;display:flex;flex-direction:column;flex-shrink:0}
+.brand{display:flex;gap:10px;align-items:center;padding:18px 12px 22px}
+.brand .logo{width:34px;height:40px;background:#fff;border-radius:4px;color:var(--blue);display:grid;place-items:center;font-size:20px}
+.brand b{display:block;font-size:13.5px}.brand small{font-size:11.5px;opacity:.8}
+.nav a{display:flex;align-items:center;gap:12px;padding:12px 16px;color:#fff;text-decoration:none;font-size:13px;margin-bottom:2px}
+.nav a svg{font-size:17px}
+.nav a.active{background:var(--blue);border-radius:3px;margin:0 0 0 0}
+.nav a:hover:not(.active){background:var(--navy2)}
+.logout{margin-top:auto;padding:0 0 20px}
+
+/* Main */
+.main{flex:1;min-width:0}
+.topbar{height:62px;background:#fff;border-bottom:1px solid var(--line);display:flex;justify-content:flex-end;align-items:center;gap:22px;padding:0 20px}
+.select{border:1px solid var(--line);background:#fff;border-radius:6px;padding:8px 12px;font-size:12.5px;display:flex;gap:30px;align-items:center;justify-content:space-between}
+.bell{position:relative;font-size:18px;color:var(--navy)}
+.bell i{position:absolute;top:-7px;right:-9px;background:#e53935;color:#fff;font:600 9px/14px sans-serif;width:14px;height:14px;border-radius:50%;text-align:center}
+.user{display:flex;align-items:center;gap:10px}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--blue);display:grid;place-items:center;color:#fff;font-size:16px}
+.user b{display:block;font-size:12px}.user small{font-size:11px;color:var(--muted)}
+.content{padding:6px 12px 20px}
+h1{font-size:20px;color:var(--navy);font-weight:700;margin-top:4px}
+.sub{color:var(--muted);font-size:12.5px;margin-bottom:12px}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:6px}
+
+/* Batch bar */
+.batch{display:flex;align-items:center;gap:14px;padding:12px 16px;margin-bottom:12px}
+.folder{width:46px;height:46px;border-radius:50%;background:#e3edfd;color:var(--blue);display:grid;place-items:center;font-size:22px}
+.batch h3{font-size:14px;display:inline;margin-right:8px}
+.badge{background:#d8f3e3;color:var(--green);font-size:11px;padding:2px 9px;border-radius:10px;font-weight:600}
+.batch .meta{display:flex;gap:26px;margin-top:6px;color:var(--muted);font-size:12px;align-items:center}
+.batch .meta b{color:var(--text)}
+.batch .meta a{color:var(--blue);text-decoration:none;font-weight:600}
+.clear{margin-left:auto;background:#fdeaea;border:1px solid #ef9a9a;color:var(--red);border-radius:5px;padding:9px 40px;text-align:center;font-size:12.5px;font-weight:600}
+.clear small{display:block;font-weight:400;font-size:10.5px;color:#a24;margin-top:2px}
+.clear {
+  font-family: inherit;
+  cursor: pointer;
+}
+.clear:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Upload */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.up{padding:14px 12px 10px}
+.up h4{font-size:13.5px;display:flex;align-items:center;gap:8px}
+.up h4 svg{color:var(--blue);font-size:18px}
+.up p.s{color:var(--muted);font-size:11.5px;margin:3px 0 10px 26px}
+.drop{border:1px dashed #5b8def;background:#f5f8ff;border-radius:4px;text-align:center;padding:18px 10px 14px}
+.drop svg{font-size:30px;color:var(--blue)}
+.drop div{margin-top:4px}.drop small{display:block;margin:4px 0;font-size:11px}
+.btn{background:var(--blue);color:#fff;border:0;border-radius:4px;padding:8px 0;width:100px;font-size:12px;font-weight:600;margin-top:4px;width:100px}
+.btn:disabled{opacity:.6;cursor:not-allowed}
+.note{text-align:center;color:var(--muted);font-size:11px;margin-top:8px}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px}
+.stat{display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:6px;border:1px solid}
+.stat .ic{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font-size:22px;flex-shrink:0}
+.stat small{display:block;font-size:11.5px}.stat strong{font-size:25px;display:block;line-height:1.2}.stat em{font-style:normal;font-size:11px}
+.s1{background:#e8f0fc;border-color:#d4e2f8}.s1 .ic{background:#cfe0fb;color:var(--blue)}
+.s2{background:#e8f6ee;border-color:#cbebd8}.s2 .ic{background:var(--green);color:#fff}.s2 strong{color:var(--green)}.s2 .ic{box-shadow:0 0 0 6px #c9eed7}
+.s3{background:#fff4e0;border-color:#fbe0ae}.s3 .ic{background:#fff;color:var(--amber);border:3px solid var(--amber)}.s3 strong{color:var(--amber)}
+.s4{background:#fdeaea;border-color:#f6c6c6}.s4 .ic{background:#f9c9c9;color:var(--red);box-shadow:0 0 0 6px #fbd9d9}.s4 strong{color:var(--red)}
+
+/* Table */
+.list{padding:0 0 12px}
+.lh{display:flex;align-items:center;justify-content:space-between;padding:12px 10px 10px}
+.lh h3{font-size:14px}
+.tools{display:flex;gap:10px}
+.search{border:1px solid var(--line);border-radius:5px;padding:8px 12px;width:160px;color:var(--text);font:inherit;font-size:12px;display:flex;gap:6px;align-items:center;background:#fff}
+.tools .select{padding:8px 12px;gap:14px}
+select.select{display:block;font:inherit;font-size:12px;color:var(--text)}
+table{width:calc(100% - 16px);margin:0 8px;border-collapse:collapse;font-size:11.5px}
+th{background:#f3f5fa;font-weight:600;padding:8px 6px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+td{padding:7px 6px;text-align:center;border-bottom:1px solid #eef1f6}
+td:nth-child(3){text-align:left}th:nth-child(3){text-align:left}
+input[type=checkbox]{width:13px;height:13px;vertical-align:middle}
+.tag{padding:2px 9px;border-radius:10px;font-size:10.5px;font-weight:600}
+.docx{background:#d9e8fd;color:#1b64d8}.pdf{background:#fde0e0;color:#d02e2e}
+.red{color:var(--red);font-weight:600}
+.st{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:12px;font-size:10.5px;font-weight:600}
+.st.c{background:#d8f3e3;color:var(--green)}.st.p{background:#fff0c9;color:#c78100}.st.n{background:#fddede;color:var(--red)}
+.st:before{content:"";width:9px;height:9px;border-radius:50%;background:currentColor}
+.rep svg{color:var(--blue);font-size:14px;margin:0 8px}
+.rep a{color:var(--blue);text-decoration:none}
+.act svg{font-size:15px;color:var(--navy)}
+.dots{font-weight:700;font-size:15px;margin-left:14px;vertical-align:middle}
+.foot{display:flex;justify-content:space-between;align-items:center;padding:14px 12px 0;color:var(--muted);font-size:11.5px}
+.pager{display:flex;gap:6px}
+.pager button{width:24px;height:26px;border:1px solid var(--line);background:#fff;border-radius:4px;font-size:11.5px}
+.pager button.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.pager button:disabled{opacity:.5;cursor:not-allowed}
+
+@media(max-width:900px){
+  body{flex-direction:column}.sidebar{width:100%}.two,.stats{grid-template-columns:1fr}
+  .batch{flex-wrap:wrap}.clear{margin-left:0}.list{overflow-x:auto}table{min-width:700px}
+}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="brand">
+    <div class="logo"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg></div>
+    <div><b>Document Management</b><small>Coordinator Portal</small></div>
+  </div>
+  {% comment %} <nav class="nav">
+    <a href="#" class="active"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>Current Batch</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v3h16v-3"/></svg>Upload Documents</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>Batch History</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2L14.3 3h-4l-.3 2.7a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2l.3 2.7h4l.3-2.7a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/></svg>Settings</a>
+  </nav> {% endcomment %}
+  {% comment %} <div class="nav logout"><a href="#"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>Logout</a></div> {% endcomment %}
+</aside>
+
+<div class="main">
+  {% comment %} <header class="topbar">
+    <div class="select">October 2026 <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></div>
+    <div class="bell"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg><i>3</i></div>
+    <div class="user"><div class="avatar"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></div><div><b>Coordinator</b><small>Admin</small></div><svg viewBox="0 0 24 24" style="margin-left:18px"><path d="M6 9l6 6 6-6"/></svg></div>
+  </header> {% endcomment %}
+
+  <div class="content">
+    <h1>Current Batch</h1>
+    <p class="sub">Upload documents for scanning and track the received results</p>
+
+    <section class="card batch">
+      <div class="folder"><svg viewBox="0 0 24 24" style="fill:currentColor"><path d="M3 6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
+      <div>
+        <div><h3 id="batchTitle">No active batch</h3><span class="badge">Active</span></div>
+        <div class="meta">
+          <span id="batchUploaded">Upload a ZIP to start a batch</span>
+          <span><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/></svg> Total Documents: <b id="batchTotal">0</b></span>
+          <a id="dlBatch" href="#" hidden>Download batch ZIP</a>
+        </div>
+      </div>
+      <button type="button" class="clear" id="clearBatchBtn">
+        🗑 Clear Batch &amp; Start New
+      </button>
+    </section>
+
+    <div class="two">
+      <section class="card up">
+        <h4><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v3h16v-3"/></svg>1. Upload Documents for Scanning</h4>
+        <p class="s">Upload a ZIP file containing DOCX / PDF documents.</p>
+
+        <div class="drop" id="drop1">
+          <svg viewBox="0 0 24 24"><path d="M16 16l-4-4-4 4M12 12v9"/><path d="M20.4 18A5 5 0 0 0 18 8.7h-1.3A8 8 0 1 0 4 16.3"/></svg>
+          <div>Drag &amp; drop ZIP file here</div>
+          <small>or</small>
+          <button class="btn" id="zip1" type="button" style="width:auto;padding:8px 22px">Select ZIP File</button>
+        </div>
+        <div class="note">Supported format: ZIP (DOCX / PDF) &nbsp;|&nbsp; Maximum size: 50 MB</div>
+        <div id="uploadMsg" class="note" style="font-weight:600"></div>
+        <div id="stageMsg" class="note" style="font-weight:600"></div>
+      </section>
+
+      <section class="card up">
+        <h4><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 13l3 3 5-6"/></svg>2. Receive Scanned Results</h4>
+        <p class="s">Once scanning is completed, upload the ZIP file containing Similarity and AI reports.</p>
+        <div class="drop" id="drop2">
+          <svg viewBox="0 0 24 24"><path d="M16 16l-4-4-4 4M12 12v9"/><path d="M20.4 18A5 5 0 0 0 18 8.7h-1.3A8 8 0 1 0 4 16.3"/></svg>
+          <div>Drag &amp; drop ZIP file here</div>
+          <small>or</small>
+          <button class="btn" id="zip2" type="button" style="width:auto;padding:8px 22px">Select ZIP File</button>
+        </div>
+        <div class="note">ZIP should include both Similarity and AI reports (PDF). The reviewer can also send it through the Telegram bot.</div>
+        <div id="resultMsg" class="note" style="font-weight:600"></div>
+      </section>
+    </div>
+
+    <div class="stats">
+      <div class="stat s1"><div class="ic"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg></div><div><small>Total Documents</small><strong id="statTotal">0</strong><em id="pctTotal">0%</em></div></div>
+      <div class="stat s2"><div class="ic"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-width="3"/></svg></div><div><small>Completed</small><strong id="statDone">0</strong><em id="pctDone">0%</em></div></div>
+      <div class="stat s3"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><div><small>In Progress (Partial)</small><strong id="statProg">0</strong><em id="pctProg">0%</em></div></div>
+      <div class="stat s4"><div class="ic"><svg viewBox="0 0 24 24"><path d="M6 2h12M6 22h12M7 2c0 6 5 6 5 10s-5 4-5 10M17 2c0 6-5 6-5 10s5 4 5 10"/></svg></div><div><small>Pending</small><strong id="statPend">0</strong><em id="pctPend">0%</em></div></div>
+    </div>
+
+    <section class="card list">
+      <div class="lh">
+        <h3 id="listTitle">Document List (0)</h3>
+        <div class="tools">
+          <input class="search" id="q" type="search" placeholder="Search file name...">
+          <select class="select" id="statusFilter">
+            <option value="">All Status</option>
+            <option value="completed">Completed</option>
+            <option value="in_progress">In Progress</option>
+            <option value="pending">Pending</option>
+          </select>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th style="width:28px"><input type="checkbox"></th><th style="width:30px">#</th><th>File Name</th><th>Format</th><th>Size</th><th>Similarity %</th><th>AI %</th><th>Status</th><th>Reports</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <div class="foot">
+        <span id="footInfo">No files</span>
+        <div class="pager" id="pager"></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<input type="file" id="zipInput" accept=".zip" hidden>
+<input type="file" id="resultInput" accept=".zip" hidden>
+
+<script>
+const $ = id => document.getElementById(id);
+const MAX_BYTES = 50 * 1024 * 1024;
+const csrf = "{{ csrf_token }}";
+const uploadUrl = "{% url 'upload_for_scanning' %}";
+const resultsUrl = "{% url 'upload_results' %}";
+const stateUrl = "{% url 'batch_state' %}";
+const reportTpl = "{% url 'download_report' 0 'kind' %}";            // /reports/0/kind/
+const batchDlTpl = "{% url 'download_batch' 'BATCHID' %}";            // /batch/BATCHID/download/
+const reportUrl = (id, kind) => reportTpl.replace("/0/", `/${id}/`).replace("/kind/", `/${kind}/`);
+
+const docIcon = '<svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>';
+{% comment %} const eye = '<svg viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>'; {% endcomment %}
+const label = { completed: "Completed", in_progress: "In Progress", pending: "Pending" };
+const cls = { completed: "c", in_progress: "p", pending: "n" };
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const pct = v => v == null ? "—" : v + "%";
+const hot = v => v != null && v >= 20 ? "red" : "";   // highlight threshold: adjust to your policy
+let curPage = 1;
+
+// ---------- Live dashboard ----------
+function setStats(b) {
+  const p = n => (b.total ? Math.round(n * 100 / b.total) : 0) + "%";
+  $("batchTitle").textContent = b.title;
+  $("batchUploaded").textContent = `Uploaded on: ${b.uploaded}`;
+  $("batchTotal").textContent = b.total;
+  $("statTotal").textContent = b.total;           $("pctTotal").textContent = b.total ? "100%" : "0%";
+  $("statDone").textContent = b.completed;        $("pctDone").textContent = p(b.completed);
+  $("statProg").textContent = b.in_progress;      $("pctProg").textContent = p(b.in_progress);
+  $("statPend").textContent = b.pending;          $("pctPend").textContent = p(b.pending);
+  $("listTitle").textContent = `Document List (${b.total})`;
+  $("dlBatch").href = batchDlTpl.replace("BATCHID", b.id);
+  $("dlBatch").hidden = false;
+
+  const stages = {
+    queued:           ["Queued to send to the reviewer on Telegram…", "var(--muted)"],
+    sent:             ["Sent to reviewer on Telegram. Awaiting confirmation.", "var(--amber)"],
+    confirmed:        [`Confirmed by ${b.confirmed_by} on ${b.confirmed_at}. Awaiting reports.`, "var(--blue)"],
+    results_received: [`Reports received ${b.results_at}.`, "var(--green)"],
+  };
+  const [t, c] = stages[b.stage] || ["", ""];
+  $("stageMsg").textContent = t;
+  $("stageMsg").style.color = c;
+}
+
+async function loadState(page = curPage) {
+  curPage = page;
+  const params = new URLSearchParams({ page, q: $("q").value, status: $("statusFilter").value });
+  let s;
+  try {
+    const res = await fetch(`${stateUrl}?${params}`);
+    if (!res.ok) return;
+    s = await res.json();
+  } catch (_) { return; }          // offline / server hiccup: keep what is on screen
+  if (!s.batch) return;
+
+  setStats(s.batch);
+
+  const link = (d, kind, ok) =>
+    ok ? `<a href="${reportUrl(d.id, kind)}" title="${kind} report">${docIcon}</a>` : "<span>-</span>";
+  $("rows").innerHTML = s.documents.map((d, i) => `<tr>
+    <td><input type="checkbox"></td><td>${s.start + i}</td><td>${esc(d.name)}</td>
+    <td><span class="tag ${esc(d.format)}">${esc(d.format.toUpperCase())}</span></td><td>${d.size}</td>
+    <td class="${hot(d.similarity)}">${pct(d.similarity)}</td><td class="${hot(d.ai)}" ${d.ai_low ? 'title="Below Turnitin\'s 20% threshold (exact score not shown)"' : ""}>${d.ai_low ? "&lt;20%" : pct(d.ai)}</td>
+    <td><span class="st ${cls[d.status]}">${label[d.status]}</span></td>
+    <td class="rep">${link(d, "similarity", d.has_sim)}${link(d, "ai", d.has_ai)}</td>
+    </tr>`).join("");
+
+  $("footInfo").textContent = s.count ? `Showing ${s.start} to ${s.end} of ${s.count} files` : "No files";
+  $("pager").innerHTML =
+    `<button ${s.page <= 1 ? "disabled" : ""} data-p="${s.page - 1}">&lsaquo;</button>` +
+    Array.from({ length: s.pages }, (_, i) =>
+      `<button class="${i + 1 === s.page ? "on" : ""}" data-p="${i + 1}">${i + 1}</button>`).join("") +
+    `<button ${s.page >= s.pages ? "disabled" : ""} data-p="${s.page + 1}">&rsaquo;</button>`;
+}
+
+$("pager").addEventListener("click", e => {
+  const p = e.target.dataset.p;
+  if (p && !e.target.disabled) loadState(+p);
+});
+$("q").addEventListener("input", () => loadState(1));
+$("statusFilter").addEventListener("change", () => loadState(1));
+
+// ---------- Uploaders (card 1: documents, card 2: reports) ----------
+function setupUploader({ drop, btn, input, msgEl, url, ok }) {
+  const say = (t, c) => { msgEl.textContent = t; msgEl.style.color = c || ""; };
+
+  async function send(file) {
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith(".zip")) return say("Please select a .zip file.", "var(--red)");
+    if (file.size > MAX_BYTES) { input.value = ""; return say("ZIP file must be 50 MB or smaller.", "var(--red)"); }
+
+    say("Uploading… please wait.", "var(--muted)");
+    btn.disabled = true;
+    const fd = new FormData();
+    fd.append("file", file);
+    try {
+      const res = await fetch(url, { method: "POST", body: fd, headers: { "X-CSRFToken": csrf } });
+      let data = {};
+      try { data = await res.json(); } catch (_) { /* non-JSON response (e.g. server error page) */ }
+
+      if (!res.ok) {
+        const extra = data.unmatched && data.unmatched.length
+          ? ` Not matched: ${data.unmatched.slice(0, 5).join(", ")}` : "";
+        return say((data.error || "Upload failed.") + extra, "var(--red)");
+      }
+      say(ok(data), "var(--green)");
+      loadState(1);
+    } catch (_) {
+      say("Network error. Please try again.", "var(--red)");
+    } finally {
+      btn.disabled = false;
+      input.value = "";
+    }
+  }
+
+  btn.addEventListener("click", () => input.click());
+  input.addEventListener("change", e => send(e.target.files[0]));
+  ["dragenter", "dragover"].forEach(ev =>
+    drop.addEventListener(ev, e => { e.preventDefault(); drop.style.background = "#e8f0ff"; }));
+  ["dragleave", "drop"].forEach(ev =>
+    drop.addEventListener(ev, e => { e.preventDefault(); drop.style.background = ""; }));
+  drop.addEventListener("drop", e => send(e.dataTransfer.files[0]));
+}
+
+setupUploader({
+  drop: $("drop1"), btn: $("zip1"), input: $("zipInput"), msgEl: $("uploadMsg"), url: uploadUrl,
+  ok: d => {
+    const types = Object.entries(d.by_type).map(([ext, n]) => `${n} ${ext.toUpperCase()}`).join(", ");
+    return `Uploaded: ${d.total} files found (${types}).`;
+  },
+});
+
+setupUploader({
+  drop: $("drop2"), btn: $("zip2"), input: $("resultInput"), msgEl: $("resultMsg"), url: resultsUrl,
+  ok: d => `${d.matched} reports matched, ${d.documents_updated} documents updated` +
+           (d.unmatched.length ? ` (${d.unmatched.length} files not matched)` : "") + ".",
+});
+
+// First load + auto-refresh (the reviewer's Telegram actions happen while this page is open)
+loadState(1);
+setInterval(() => loadState(), 15000);
+
+$("clearBatchBtn").addEventListener("click", async function () {
+  if (!confirm(
+    "Are you sure you want to clear all batch folders? This cannot be undone."
+  )) {
+    return;
+  }
+
+  const btn = this;
+  btn.disabled = true;
+
+  try {
+    const response = await fetch("{% url 'clear_batch' %}", {
+      method: "POST",
+      headers: {
+        "X-CSRFToken": csrf,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({})
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Failed to clear batch folders.");
+    }
+
+    alert(data.message);
+
+    // Refresh the page so the dashboard reflects the cleared state.
+    window.location.reload();
+
+  } catch (error) {
+    alert(error.message || "An error occurred while clearing batches.");
+  } finally {
+    btn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
