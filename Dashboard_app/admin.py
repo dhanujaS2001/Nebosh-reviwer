@@ -55,7 +55,7 @@ class DocumentAdmin(admin.ModelAdmin):
                     "similarity_pct", "ai_pct", "ai_below_threshold", "size_mb")
     list_filter = ("status", "file_format", "ai_below_threshold", "batch")
     search_fields = ("file_name", "batch__batch_id")
-    readonly_fields = ("stem",)
+    readonly_fields = ("stem", "report_data")
     list_select_related = ("batch",)
 
     @admin.display(description="Size")

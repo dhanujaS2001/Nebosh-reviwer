@@ -20,10 +20,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-9rrg0_$p$(9ax$)hc+d3^_he0(@&m4tp@x!n8e5w4+foy&q53k'
+# SECRET_KEY = 'django-insecure-9rrg0_$p$(9ax$)hc+d3^_he0(@&m4tp@x!n8e5w4+foy&q53k'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# DEBUG = True
 
 ALLOWED_HOSTS = []
 
@@ -129,7 +129,27 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 TIME_ZONE = "Asia/Kolkata"   # set to your timezone so times in messages are correct
 
-TELEGRAM_BOT_TOKEN = "8751531820:AAFXEhRt3XJn2YSCEn6_zr8M6TJSafGlFS8"
-TELEGRAM_CHAT_ID = "646442767"
+# TELEGRAM_BOT_TOKEN = "8751531820:AAFXEhRt3XJn2YSCEn6_zr8M6TJSafGlFS8"
+# TELEGRAM_CHAT_ID = "646442767"
 TELEGRAM_REMINDER_SECONDS = int(os.environ.get("TELEGRAM_REMINDER_SECONDS", 30))  # 30 sec
 TELEGRAM_TICK_SECRET = "kBouGJItRQa97MKlhE_DyD-HDXYeqh7hU_PFETiDvgM"
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = "dhanujashaji074@gmail.com"
+# EMAIL_HOST_PASSWORD = "ocmhvdbqlyqqkjkj"   # NOT your regular Gmail password
+RESULTS_NOTIFY_EMAILS  = ["dhanujashaji4554@gmail.com"]
+
+
+DEBUG = os.environ.get("DJANGO_DEBUG") == "1"
+SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+TELEGRAM_BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
+TELEGRAM_CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
+TELEGRAM_TICK_SECRET = os.environ["TELEGRAM_TICK_SECRET"]
+EMAIL_HOST_USER = os.environ["EMAIL_HOST_USER"]
+EMAIL_HOST_PASSWORD = os.environ["EMAIL_HOST_PASSWORD"]
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER

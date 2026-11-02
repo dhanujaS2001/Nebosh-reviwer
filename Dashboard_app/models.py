@@ -54,6 +54,7 @@ class Document(models.Model):
     similarity_pct = models.PositiveSmallIntegerField(null=True, blank=True)
     ai_pct = models.PositiveSmallIntegerField(null=True, blank=True)
     ai_below_threshold = models.BooleanField(default=False)   # Turnitin shows '*%' under 20%
+    report_data = models.JSONField(default=dict, blank=True)  # parsed cover / similarity / AI details
     similarity_report = models.CharField(max_length=500, blank=True)   # relative to MEDIA_ROOT
     ai_report = models.CharField(max_length=500, blank=True)
 

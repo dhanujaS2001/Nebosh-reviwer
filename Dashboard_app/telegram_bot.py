@@ -19,6 +19,8 @@ from django.conf import settings
 from django.db.models import Q
 from django.utils import timezone
 
+from .notifications import email_results_received
+
 log = logging.getLogger(__name__)
 
 API = "https://api.telegram.org/bot{token}/{method}"
@@ -232,6 +234,7 @@ def handle_document(msg):
             with open(zip_path, "wb") as f:
                 for chunk in r.iter_content(65536):
                     f.write(chunk)
+        print(f"Downloaded results ZIP for batch {batch.batch_id} from Telegram: {zip_path}")
         s = ingest_results_zip(batch, zip_path, "telegram", name,
                                uploaded_by=_sender_label(msg))
     except Exception as e:
@@ -247,9 +250,14 @@ def handle_document(msg):
         if batch.reminder_message_id:
             _strip_buttons(batch.reminder_message_id)
             _delete(batch.reminder_message_id)
+        email_results_received(batch, s, "telegram", name, _sender_label(msg))
 
     text = (f"📦 Batch {batch.batch_id}: {s['matched']} reports matched, "
             f"{s['documents_updated']} documents updated.")
+    for d in s["details"][:15]:
+        sim = f"{d['similarity']}%" if d["similarity"] is not None else "-"
+        ai = "<20%" if d["ai_low"] else (f"{d['ai']}%" if d["ai"] is not None else "-")
+        # text += f"\n• {d['file']}: similarity {sim}, AI {ai}"
     if s["unmatched"]:
         text += f"\nNot matched ({len(s['unmatched'])}): " + ", ".join(s["unmatched"][:10])
     _send(text, mid)

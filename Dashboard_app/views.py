@@ -1,14 +1,15 @@
 import hmac
 import json
 import shutil
+import tempfile
 import uuid
 import zipfile
 from collections import Counter
 from functools import wraps
 from pathlib import Path
+from zipfile import ZipFile
 
 from django.conf import settings
-from django.core.paginator import Paginator
 from django.db import transaction
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render
@@ -19,8 +20,10 @@ from django.views.decorators.csrf import csrf_protect
 from . import telegram_bot as tg
 from .models import Batch, Document
 from .services import create_documents, ingest_results_zip, scan_zip
+from .notifications import email_results_received
 
 MAX_ZIP_SIZE = 50 * 1024 ** 2   # 50 MB
+NAME_PREFIXES = {"ADI", "AMR", "ARO", "SHA", "SAB"}
 
 
 def api_login_required(view):
@@ -46,6 +49,24 @@ def _save_upload(upload, dest: Path):
 
 def _zip_error_message(exc):
     return "Invalid or corrupted ZIP file." if isinstance(exc, zipfile.BadZipFile) else str(exc)
+
+
+def _filtered_docs(request, batch):
+    """Single source of truth for table filtering.
+    Used by both the dashboard table and the reports ZIP download."""
+    docs = batch.documents.all()
+
+    q = request.GET.get("q", "").strip()
+    status = request.GET.get("status", "")
+    name = request.GET.get("name", "").upper()
+
+    if q:
+        docs = docs.filter(file_name__icontains=q)
+    if status in Document.Status.values:
+        docs = docs.filter(status=status)
+    if name in NAME_PREFIXES:
+        docs = docs.filter(file_name__istartswith=name)
+    return docs
 
 
 # ---------- 1. Coordinator uploads documents for scanning ----------
@@ -135,9 +156,10 @@ def upload_results(request):
 
     user = request.user
     uploaded_by = user.get_username() if user.is_authenticated else "web"
-
+    print(f"Results ZIP uploaded by {uploaded_by}: {upload.name} ({upload.size} bytes)")
     try:
         summary = ingest_results_zip(batch, zip_path, "web", upload.name, uploaded_by=uploaded_by)
+        print(f"Results ZIP uploaded by {uploaded_by}: {summary['matched']} reports matched.")
     except (zipfile.BadZipFile, ValueError) as e:
         zip_path.unlink(missing_ok=True)
         return JsonResponse({"error": _zip_error_message(e)}, status=400)
@@ -148,6 +170,7 @@ def upload_results(request):
 
     tg.notify(f"📦 Results uploaded on the website for batch {batch.batch_id}: "
               f"{summary['matched']} reports matched.")
+    email_results_received(batch, summary, "website", upload.name, uploaded_by)
     return JsonResponse({"batch_id": batch.batch_id, **summary})
 
 
@@ -164,16 +187,10 @@ def batch_state(request):
     if not batch:
         return JsonResponse({"batch": None})
 
-    docs = batch.documents.all()
-    counts = Counter(docs.values_list("status", flat=True))
+    # Stat cards always reflect the whole batch; the table honours the filters.
+    counts = Counter(batch.documents.values_list("status", flat=True))
+    docs = _filtered_docs(request, batch)
 
-    q, status = request.GET.get("q", "").strip(), request.GET.get("status", "")
-    if q:
-        docs = docs.filter(file_name__icontains=q)
-    if status in Document.Status.values:
-        docs = docs.filter(status=status)
-
-    page = Paginator(docs, 8).get_page(request.GET.get("page", 1))
     local = timezone.localtime(batch.uploaded_at)
     return JsonResponse({
         "batch": {
@@ -189,15 +206,35 @@ def batch_state(request):
             "confirmed_at": _fmt(batch.confirmed_at),
             "results_at": _fmt(batch.results_received_at),
         },
-        "page": page.number, "pages": page.paginator.num_pages, "count": page.paginator.count,
-        "start": page.start_index(), "end": page.end_index(),
+        "count": len(docs),
         "documents": [{
             "id": d.pk, "name": d.file_name, "format": d.file_format,
             "size": f"{d.size_bytes / 1024 ** 2:.1f} MB",
             "similarity": d.similarity_pct, "ai": d.ai_pct, "ai_low": d.ai_below_threshold,
             "status": d.status,
             "has_sim": bool(d.similarity_report), "has_ai": bool(d.ai_report),
-        } for d in page],
+        } for d in docs],
+    })
+
+
+@api_login_required
+def document_detail(request, pk):
+    """Everything we parsed from one document's reports, for the dashboard pop-up."""
+    d = get_object_or_404(Document, pk=pk)
+    data = d.report_data or {}
+    return JsonResponse({
+        "id": d.pk,
+        "name": d.file_name,
+        "format": d.file_format,
+        "status": d.status,
+        "similarity": d.similarity_pct,
+        "ai": d.ai_pct,
+        "ai_low": d.ai_below_threshold,
+        "has_sim": bool(d.similarity_report),
+        "has_ai": bool(d.ai_report),
+        "cover": data.get("cover") or {},
+        "sim": data.get("similarity") or {},
+        "ai_detail": data.get("ai") or {},
     })
 
 
@@ -221,6 +258,63 @@ def download_batch(request, batch_id):
     if not path.exists():
         raise Http404
     return FileResponse(open(path, "rb"), as_attachment=True, filename=batch.original_name)
+
+
+@api_login_required
+def download_reports_zip(request):
+    """ZIP of all similarity + AI report PDFs for the documents matching the
+    table filters (search, name, status), across ALL pages."""
+    batch = _batch_or_latest(request.GET.get("batch_id"))
+    if not batch:
+        return JsonResponse({"error": "No batch found."}, status=404)
+
+    docs = _filtered_docs(request, batch)
+    media_root = Path(settings.MEDIA_ROOT).resolve()
+
+    tmp = tempfile.TemporaryFile()      # on disk, so large batches don't fill RAM
+    used_names = set()
+    files_added = 0
+
+    # PDFs are already compressed, so ZIP_STORED is faster and loses nothing.
+    with ZipFile(tmp, "w", zipfile.ZIP_STORED) as zf:
+        for doc in docs:
+            for kind, rel in (("similarity", doc.similarity_report),
+                              ("ai", doc.ai_report)):
+                if not rel:
+                    continue
+
+                path = (media_root / str(rel)).resolve()
+                try:
+                    path.relative_to(media_root)      # stay inside MEDIA_ROOT
+                except ValueError:
+                    continue
+                if not path.is_file():
+                    continue
+
+                arcname = f"{doc.stem}_{kind}.pdf"
+                n = 1
+                while arcname in used_names:          # avoid duplicate names
+                    n += 1
+                    arcname = f"{doc.stem}_{kind}_{n}.pdf"
+                used_names.add(arcname)
+
+                zf.write(path, arcname=arcname)
+                files_added += 1
+
+    if not files_added:
+        tmp.close()
+        return JsonResponse(
+            {"error": "No reports available for the documents currently shown."},
+            status=404,
+        )
+
+    tmp.seek(0)
+    return FileResponse(
+        tmp,
+        as_attachment=True,
+        filename=f"reports_{batch.batch_id}.zip",
+        content_type="application/zip",
+    )
 
 
 # ---------- Cron endpoint ----------

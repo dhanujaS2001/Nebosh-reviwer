@@ -83,7 +83,7 @@ h1{font-size:20px;color:var(--navy);font-weight:700;margin-top:4px}
 .s3{background:#fff4e0;border-color:#fbe0ae}.s3 .ic{background:#fff;color:var(--amber);border:3px solid var(--amber)}.s3 strong{color:var(--amber)}
 .s4{background:#fdeaea;border-color:#f6c6c6}.s4 .ic{background:#f9c9c9;color:var(--red);box-shadow:0 0 0 6px #fbd9d9}.s4 strong{color:var(--red)}
 
-/* Table */
+/* Table (no pagination: the whole list scrolls inside a fixed-height box) */
 .list{padding:0 0 12px}
 .lh{display:flex;align-items:center;justify-content:space-between;padding:12px 10px 10px}
 .lh h3{font-size:14px}
@@ -91,14 +91,16 @@ h1{font-size:20px;color:var(--navy);font-weight:700;margin-top:4px}
 .search{border:1px solid var(--line);border-radius:5px;padding:8px 12px;width:160px;color:var(--text);font:inherit;font-size:12px;display:flex;gap:6px;align-items:center;background:#fff}
 .tools .select{padding:8px 12px;gap:14px}
 select.select{display:block;font:inherit;font-size:12px;color:var(--text)}
-table{width:calc(100% - 16px);margin:0 8px;border-collapse:collapse;font-size:11.5px}
-th{background:#f3f5fa;font-weight:600;padding:8px 6px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.tscroll{max-height:560px;overflow-y:auto;margin:0 8px}
+table{width:100%;margin:0;border-collapse:collapse;font-size:11.5px}
+th{background:#f3f5fa;font-weight:600;padding:8px 6px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:1}
 td{padding:7px 6px;text-align:center;border-bottom:1px solid #eef1f6}
 td:nth-child(3){text-align:left}th:nth-child(3){text-align:left}
 input[type=checkbox]{width:13px;height:13px;vertical-align:middle}
 .tag{padding:2px 9px;border-radius:10px;font-size:10.5px;font-weight:600}
 .docx{background:#d9e8fd;color:#1b64d8}.pdf{background:#fde0e0;color:#d02e2e}
 .red{color:var(--red);font-weight:600}
+.green{color:var(--green);font-weight:600}
 .st{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:12px;font-size:10.5px;font-weight:600}
 .st.c{background:#d8f3e3;color:var(--green)}.st.p{background:#fff0c9;color:#c78100}.st.n{background:#fddede;color:var(--red)}
 .st:before{content:"";width:9px;height:9px;border-radius:50%;background:currentColor}
@@ -107,10 +109,34 @@ input[type=checkbox]{width:13px;height:13px;vertical-align:middle}
 .act svg{font-size:15px;color:var(--navy)}
 .dots{font-weight:700;font-size:15px;margin-left:14px;vertical-align:middle}
 .foot{display:flex;justify-content:space-between;align-items:center;padding:14px 12px 0;color:var(--muted);font-size:11.5px}
-.pager{display:flex;gap:6px}
-.pager button{width:24px;height:26px;border:1px solid var(--line);background:#fff;border-radius:4px;font-size:11.5px}
-.pager button.on{background:var(--blue);color:#fff;border-color:var(--blue)}
-.pager button:disabled{opacity:.5;cursor:not-allowed}
+
+
+/* Detail pop-up */
+.eyebtn{background:none;border:0;color:var(--navy);padding:2px 4px;border-radius:4px}
+.eyebtn:hover{background:#e8f0fc;color:var(--blue)}
+.modal{position:fixed;inset:0;background:rgba(14,33,71,.55);display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
+.modal.open{display:flex}
+.mbox{background:#fff;border-radius:8px;width:min(880px,100%);max-height:90vh;overflow:auto;padding:18px 22px}
+.mhead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px}
+.mhead h2{font-size:17px;color:var(--navy)}
+.mclose{background:none;border:0;font-size:22px;line-height:1;color:var(--muted)}
+.meta2{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px 18px;background:#f7f9fd;border:1px solid var(--line);border-radius:6px;padding:10px 12px;margin-bottom:12px;font-size:12px}
+.meta2 small{display:block;color:var(--muted);font-size:10.5px}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.kpi{border:1px solid var(--line);border-radius:6px;padding:12px 14px}
+.kpi h4{font-size:12.5px;color:var(--muted);font-weight:600;margin-bottom:4px}
+.big{font-size:36px;font-weight:700;line-height:1.1;color:var(--green)}
+.big.red{color:var(--red)}.big.na{color:var(--muted);font-size:22px}
+.muted{color:var(--muted);font-size:11.5px;margin-top:4px}
+.sec{font-weight:600;font-size:12.5px;margin:12px 0 6px;color:var(--navy)}
+.bars div.r{display:grid;grid-template-columns:150px 1fr 48px;gap:8px;align-items:center;margin:5px 0;font-size:12px}
+.bar{height:8px;background:#eef1f6;border-radius:4px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--blue)}
+.mt{width:100%;margin:0;font-size:11.5px}
+.mt td,.mt th{text-align:left;padding:5px 6px}
+.scroll{max-height:220px;overflow:auto;border:1px solid var(--line);border-radius:6px}
+.dl a{display:inline-block;margin-right:8px;padding:7px 12px;border:1px solid var(--blue);border-radius:5px;color:var(--blue);text-decoration:none;font-weight:600;font-size:12px}
+@media(max-width:700px){.kpis{grid-template-columns:1fr}.bars div.r{grid-template-columns:110px 1fr 44px}}
 
 @media(max-width:900px){
   body{flex-direction:column}.sidebar{width:100%}.two,.stats{grid-template-columns:1fr}
@@ -200,28 +226,44 @@ input[type=checkbox]{width:13px;height:13px;vertical-align:middle}
     <section class="card list">
       <div class="lh">
         <h3 id="listTitle">Document List (0)</h3>
+
         <div class="tools">
           <input class="search" id="q" type="search" placeholder="Search file name...">
+
+          <select class="select" id="nameFilter">
+            <option value="">All Names</option>
+            <option value="ADI">Adil</option>
+            <option value="AMR">Amar</option>
+            <option value="ARO">Aromal</option>
+            <option value="SHA">Shamil</option>
+            <option value="SAB">Sabin</option>
+          </select>
+
           <select class="select" id="statusFilter">
             <option value="">All Status</option>
             <option value="completed">Completed</option>
             <option value="in_progress">In Progress</option>
             <option value="pending">Pending</option>
           </select>
+
+          <button type="button" class="btn" id="downloadZipBtn">Download</button>
         </div>
+
       </div>
-      <table>
-        <thead><tr><th style="width:28px"><input type="checkbox"></th><th style="width:30px">#</th><th>File Name</th><th>Format</th><th>Size</th><th>Similarity %</th><th>AI %</th><th>Status</th><th>Reports</th></tr></thead>
-        <tbody id="rows"></tbody>
-      </table>
+      <div class="tscroll">
+        <table>
+        <thead><tr><th style="width:28px"><input type="checkbox"></th><th style="width:30px">#</th><th>File Name</th><th>Format</th><th>Size</th><th>Similarity %</th><th>AI %</th><th>Status</th><th>Reports</th><th></th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
       <div class="foot">
         <span id="footInfo">No files</span>
-        <div class="pager" id="pager"></div>
       </div>
     </section>
   </div>
 </div>
 
+<div class="modal" id="modal"><div class="mbox" id="mbox"></div></div>
 <input type="file" id="zipInput" accept=".zip" hidden>
 <input type="file" id="resultInput" accept=".zip" hidden>
 
@@ -232,18 +274,21 @@ const csrf = "{{ csrf_token }}";
 const uploadUrl = "{% url 'upload_for_scanning' %}";
 const resultsUrl = "{% url 'upload_results' %}";
 const stateUrl = "{% url 'batch_state' %}";
+const reportsZipUrl = "{% url 'download_reports_zip' %}";
 const reportTpl = "{% url 'download_report' 0 'kind' %}";            // /reports/0/kind/
 const batchDlTpl = "{% url 'download_batch' 'BATCHID' %}";            // /batch/BATCHID/download/
+const detailTpl = "{% url 'document_detail' 0 %}";                  // /api/document/0/
 const reportUrl = (id, kind) => reportTpl.replace("/0/", `/${id}/`).replace("/kind/", `/${kind}/`);
 
 const docIcon = '<svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>';
-{% comment %} const eye = '<svg viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>'; {% endcomment %}
+const eye = '<svg viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>';
 const label = { completed: "Completed", in_progress: "In Progress", pending: "Pending" };
 const cls = { completed: "c", in_progress: "p", pending: "n" };
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const pct = v => v == null ? "—" : v + "%";
-const hot = v => v != null && v >= 20 ? "red" : "";   // highlight threshold: adjust to your policy
-let curPage = 1;
+const THRESHOLD = 20;   // adjust to your policy
+const hot = v => v != null && v >= THRESHOLD ? "red" : "";   // used by the pop-up
+const tone = v => v == null ? "" : (v >= THRESHOLD ? "red" : "green");   // used by the table
 
 // ---------- Live dashboard ----------
 function setStats(b) {
@@ -270,9 +315,12 @@ function setStats(b) {
   $("stageMsg").style.color = c;
 }
 
-async function loadState(page = curPage) {
-  curPage = page;
-  const params = new URLSearchParams({ page, q: $("q").value, status: $("statusFilter").value });
+async function loadState() {
+  const params = new URLSearchParams({
+    q: $("q").value,
+    status: $("statusFilter").value,
+    name: $("nameFilter").value
+  });
   let s;
   try {
     const res = await fetch(`${stateUrl}?${params}`);
@@ -286,27 +334,56 @@ async function loadState(page = curPage) {
   const link = (d, kind, ok) =>
     ok ? `<a href="${reportUrl(d.id, kind)}" title="${kind} report">${docIcon}</a>` : "<span>-</span>";
   $("rows").innerHTML = s.documents.map((d, i) => `<tr>
-    <td><input type="checkbox"></td><td>${s.start + i}</td><td>${esc(d.name)}</td>
+    <td><input type="checkbox"></td><td>${i + 1}</td><td>${esc(d.name)}</td>
     <td><span class="tag ${esc(d.format)}">${esc(d.format.toUpperCase())}</span></td><td>${d.size}</td>
-    <td class="${hot(d.similarity)}">${pct(d.similarity)}</td><td class="${hot(d.ai)}" ${d.ai_low ? 'title="Below Turnitin\'s 20% threshold (exact score not shown)"' : ""}>${d.ai_low ? "&lt;20%" : pct(d.ai)}</td>
+    <td class="${tone(d.similarity)}">${pct(d.similarity)}</td>
+    <td class="${d.ai_low ? "green" : tone(d.ai)}" ${d.ai_low ? 'title="Below Turnitin\'s 20% threshold (exact score not shown)"' : ""}>${d.ai_low ? "&lt;20%" : pct(d.ai)}</td>
     <td><span class="st ${cls[d.status]}">${label[d.status]}</span></td>
     <td class="rep">${link(d, "similarity", d.has_sim)}${link(d, "ai", d.has_ai)}</td>
-    </tr>`).join("");
+    <td class="act"><button class="eyebtn" type="button" data-id="${d.id}" title="View report analysis">${eye}</button></td></tr>`).join("");
 
-  $("footInfo").textContent = s.count ? `Showing ${s.start} to ${s.end} of ${s.count} files` : "No files";
-  $("pager").innerHTML =
-    `<button ${s.page <= 1 ? "disabled" : ""} data-p="${s.page - 1}">&lsaquo;</button>` +
-    Array.from({ length: s.pages }, (_, i) =>
-      `<button class="${i + 1 === s.page ? "on" : ""}" data-p="${i + 1}">${i + 1}</button>`).join("") +
-    `<button ${s.page >= s.pages ? "disabled" : ""} data-p="${s.page + 1}">&rsaquo;</button>`;
+  $("footInfo").textContent = s.count ? `Showing all ${s.count} files` : "No files";
 }
 
-$("pager").addEventListener("click", e => {
-  const p = e.target.dataset.p;
-  if (p && !e.target.disabled) loadState(+p);
+$("q").addEventListener("input", () => loadState());
+$("statusFilter").addEventListener("change", () => loadState());
+$("nameFilter").addEventListener("change", () => loadState());
+
+// ---------- Download ZIP of reports (respects current search / name / status filters) ----------
+$("downloadZipBtn").addEventListener("click", async function () {
+  const btn = this;
+  const params = new URLSearchParams({
+    q: $("q").value,
+    status: $("statusFilter").value,
+    name: $("nameFilter").value,
+  });
+
+  btn.disabled = true;
+  const oldText = btn.textContent;
+  btn.textContent = "Preparing…";
+
+  try {
+    const res = await fetch(`${reportsZipUrl}?${params}`);
+    if (!res.ok) {
+      let msg = "Could not create the ZIP.";
+      try { msg = (await res.json()).error || msg; } catch (_) {}
+      throw new Error(msg);
+    }
+    const blob = await res.blob();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "reports.zip";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(a.href);
+  } catch (err) {
+    alert(err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = oldText;
+  }
 });
-$("q").addEventListener("input", () => loadState(1));
-$("statusFilter").addEventListener("change", () => loadState(1));
 
 // ---------- Uploaders (card 1: documents, card 2: reports) ----------
 function setupUploader({ drop, btn, input, msgEl, url, ok }) {
@@ -332,7 +409,7 @@ function setupUploader({ drop, btn, input, msgEl, url, ok }) {
         return say((data.error || "Upload failed.") + extra, "var(--red)");
       }
       say(ok(data), "var(--green)");
-      loadState(1);
+      loadState();
     } catch (_) {
       say("Network error. Please try again.", "var(--red)");
     } finally {
@@ -364,8 +441,81 @@ setupUploader({
            (d.unmatched.length ? ` (${d.unmatched.length} files not matched)` : "") + ".",
 });
 
+
+// ---------- Report analysis pop-up ----------
+const srcLabels = { internet: "Internet sources", publications: "Publications", student_papers: "Student papers" };
+const grpLabels = { not_cited: "Not cited or quoted", missing_quotations: "Missing quotations",
+                    missing_citation: "Missing citation", cited_quoted: "Cited and quoted" };
+const val = v => (v === null || v === undefined || v === "") ? "—" : esc(v);
+const num = v => (v === null || v === undefined) ? "—" : Number(v).toLocaleString();
+
+function renderDetail(d) {
+  const c = d.cover || {}, s = d.sim || {}, g = s.match_groups || {}, src = s.sources || {};
+
+  const simCard = d.has_sim ? `
+    <div class="kpi"><h4>Similarity (Turnitin)</h4>
+      <div class="big ${hot(d.similarity)}">${pct(d.similarity)}</div>
+      <div class="muted">${num(s.matches_total)} matches &middot; ${num(s.integrity_flags)} integrity flags</div></div>`
+    : `<div class="kpi"><h4>Similarity (Turnitin)</h4><div class="big na">Report not received</div></div>`;
+
+  let aiBig, aiNote = "";
+  if (!d.has_ai) { aiBig = `<div class="big na">Report not received</div>`; }
+  else if (d.ai_low) {
+    aiBig = `<div class="big">&lt;20%</div>`;
+    aiNote = `<div class="muted">Turnitin only shows AI scores of 20% or higher. This document scored below that, so no exact figure exists.</div>`;
+  } else {
+    aiBig = `<div class="big ${hot(d.ai)}">${pct(d.ai)}</div>`;
+    aiNote = `<div class="muted">detected as AI-written</div>`;
+  }
+  const aiCard = `<div class="kpi"><h4>AI writing (Turnitin)</h4>${aiBig}${aiNote}</div>`;
+
+
+  let simDetail = "";
+  if (d.has_sim && (Object.keys(g).length || Object.keys(src).length)) {
+    const bar = (label, pctv, lt1, count) => `<div class="r"><span>${label}${count != null ? ` (${count})` : ""}</span>
+        <div class="bar"><i style="width:${Math.max(pctv || 0, lt1 ? 1 : 0)}%"></i></div><b>${lt1 ? "&lt;1" : (pctv ?? 0)}%</b></div>`;
+    simDetail += `<div class="sec">Match groups</div><div class="bars">` +
+      Object.entries(grpLabels).filter(([k]) => g[k]).map(([k, l]) => bar(l, g[k].pct, false, g[k].count)).join("") + `</div>`;
+    simDetail += `<div class="sec">Where the matches come from</div><div class="bars">` +
+      Object.entries(srcLabels).filter(([k]) => src[k]).map(([k, l]) => bar(l, src[k].pct, src[k].lt1)).join("") + `</div>`;
+    if ((s.top_sources || []).length) {
+      simDetail += `<div class="sec">Top sources (${s.top_sources.length})</div><div class="scroll"><table class="mt">
+        <thead><tr><th>#</th><th>Type</th><th>Source</th><th>Match</th></tr></thead><tbody>` +
+        s.top_sources.map(t => `<tr><td>${t.rank}</td><td>${esc(t.type)}</td><td>${esc(t.name)}</td><td>${esc(t.pct)}</td></tr>`).join("") +
+        `</tbody></table></div>`;
+    }
+  }
+
+  const dl = `<div class="sec">Original reports</div><div class="dl">` +
+    (d.has_sim ? `<a href="${reportUrl(d.id, "similarity")}">Download similarity report</a>` : "") +
+    (d.has_ai ? `<a href="${reportUrl(d.id, "ai")}">Download AI report</a>` : "") +
+    (!d.has_sim && !d.has_ai ? `<span class="muted">No reports received yet.</span>` : "") + `</div>`;
+
+  $("mbox").innerHTML = `
+    <div class="mhead"><div><h2>${esc(d.name)}</h2>
+      <span class="st ${cls[d.status]}">${label[d.status]}</span></div>
+      <button class="mclose" type="button" aria-label="Close">&times;</button></div>
+    <div class="kpis">${simCard}${aiCard}</div>${simDetail}${dl}`;
+}
+
+async function openDetail(id) {
+  $("mbox").innerHTML = '<div class="muted">Loading…</div>';
+  $("modal").classList.add("open");
+  try {
+    const res = await fetch(detailTpl.replace("/0/", `/${id}/`));
+    if (!res.ok) throw new Error();
+    renderDetail(await res.json());
+  } catch (_) {
+    $("mbox").innerHTML = '<div class="mhead"><b>Could not load the details.</b><button class="mclose" type="button">&times;</button></div>';
+  }
+}
+const closeModal = () => $("modal").classList.remove("open");
+$("rows").addEventListener("click", e => { const b = e.target.closest(".eyebtn"); if (b) openDetail(b.dataset.id); });
+$("modal").addEventListener("click", e => { if (e.target.id === "modal" || e.target.closest(".mclose")) closeModal(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
+
 // First load + auto-refresh (the reviewer's Telegram actions happen while this page is open)
-loadState(1);
+loadState();
 setInterval(() => loadState(), 15000);
 
 $("clearBatchBtn").addEventListener("click", async function () {

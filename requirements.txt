@@ -1,0 +1,4 @@
+Django==6.1.2
+requests==2.34.2
+pypdf==6.21.4
+pypdfium2==5.14.0

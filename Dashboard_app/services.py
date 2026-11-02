@@ -9,6 +9,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from .models import Batch, Document, ResultUpload
+from .report_parser import analyse_report, apply_to_document
 
 MAX_UNCOMPRESSED = 500 * 1024 ** 2    # zip-bomb guard
 MAX_REPORT_BYTES = 25 * 1024 ** 2
@@ -72,40 +73,25 @@ def match_document(report_stem: str, docs_by_len):
     return None
 
 
-def _pdf_text(pdf_path: Path, pages: int = 3) -> str:
-    try:
-        from pypdf import PdfReader
-        reader = PdfReader(str(pdf_path))
-        return " ".join((p.extract_text() or "") for p in reader.pages[:pages]).lower()
-    except Exception:
-        return ""
-
-
-def extract_similarity(pdf_path: Path):
-    """Turnitin similarity report, page 2: '25% Overall Similarity'. None if not found."""
-    m = re.search(r"(\d{1,3})\s*%\s*overall\s+similarity", _pdf_text(pdf_path))
-    if m and 0 <= int(m.group(1)) <= 100:
-        return int(m.group(1))
+def _find_document(cover: dict, report_name: str, docs):
+    """Match a report to a document. The Turnitin cover page is the most reliable:
+    it lists the ORIGINAL file name, so it still works if the reviewer renames the report."""
+    for candidate in (Path(cover.get("file_name") or "").stem,
+                      cover.get("title") or "",
+                      Path(report_name).stem):
+        cand = candidate.strip().lower()
+        if cand:
+            doc = match_document(cand, docs)
+            if doc:
+                return doc
     return None
-
-
-def extract_ai(pdf_path: Path):
-    """Turnitin AI writing report, page 2: '37% detected as AI', or '*% detected as AI'
-    when the score is under Turnitin's 20% threshold (the number is deliberately hidden).
-    Returns (pct, below_threshold). The '20%' in the explanatory text is NOT a score."""
-    t = _pdf_text(pdf_path)
-    m = re.search(r"(\d{1,3})\s*%\s*detected\s+as\s+ai", t)
-    if m and 0 <= int(m.group(1)) <= 100:
-        return int(m.group(1)), False
-    if re.search(r"\*\s*%\s*detected\s+as\s+ai", t):
-        return None, True
-    return None, False
 
 
 @transaction.atomic
 def ingest_results_zip(batch, zip_path: Path, source: str, original_name: str,
                        uploaded_by: str = "") -> dict:
-    """Match report PDFs in the ZIP to the batch's documents, store them, update DB.
+    """Read every report PDF in the ZIP (content, not just file names), attach it to the
+    right document, store the file and the parsed numbers/details.
     Safe to call repeatedly: later ZIPs fill in gaps or overwrite earlier reports.
     Called by both the website view and the Telegram bot."""
     media_root = Path(settings.MEDIA_ROOT)
@@ -113,7 +99,7 @@ def ingest_results_zip(batch, zip_path: Path, source: str, original_name: str,
     out_dir.mkdir(parents=True, exist_ok=True)
 
     docs = sorted(batch.documents.all(), key=lambda d: len(d.stem), reverse=True)
-    touched, matched, unmatched = {}, 0, []
+    touched, matched, unmatched, no_score = {}, 0, [], []
 
     with zipfile.ZipFile(zip_path) as zf:
         check_zip_safe(zf)
@@ -121,23 +107,35 @@ def ingest_results_zip(batch, zip_path: Path, source: str, original_name: str,
             if not name.lower().endswith(".pdf") or info.file_size > MAX_REPORT_BYTES:
                 unmatched.append(name)
                 continue
-            kind = classify_report(name)
-            doc = match_document(Path(name).stem.lower(), docs) if kind else None
+
+            data = zf.read(info)
+            parsed = analyse_report(data)
+            print(parsed,"----------------------------")
+            kind = parsed["kind"] or classify_report(name)     # content first, file name second
+            doc = _find_document(parsed["cover"], name, docs) if kind else None
             if not doc:
                 unmatched.append(name)
                 continue
 
             # We choose the destination name ourselves, so zip-slip is impossible.
             dest = out_dir / f"{doc.stem}__{kind}.pdf"
-            dest.write_bytes(zf.read(info))
+            dest.write_bytes(data)
             rel = str(dest.relative_to(media_root))
 
+            # Set the stored file FIRST: apply_to_document -> refresh_status() reads it.
             if kind == "similarity":
                 doc.similarity_report = rel
-                doc.similarity_pct = extract_similarity(dest)
             else:
                 doc.ai_report = rel
-                doc.ai_pct, doc.ai_below_threshold = extract_ai(dest)
+
+            # Parsed numbers + details are merged onto the document. A report whose
+            # score could not be read keeps any previously saved score (never wiped).
+            if parsed["kind"] == kind:
+                if not apply_to_document(doc, parsed, save=False):
+                    no_score.append(name)
+            else:
+                no_score.append(name)    # identified by file name only, nothing to parse
+
             touched[doc.pk] = doc
             matched += 1
 
@@ -160,4 +158,12 @@ def ingest_results_zip(batch, zip_path: Path, source: str, original_name: str,
         zip_path=str(zip_path.relative_to(media_root)),
         matched_count=matched, unmatched=unmatched,
     )
-    return {"matched": matched, "documents_updated": len(touched), "unmatched": unmatched}
+    return {
+        "matched": matched,
+        "documents_updated": len(touched),
+        "unmatched": unmatched,
+        "no_score": no_score,        # matched and stored, but no percentage could be read
+        "details": [{"file": d.file_name, "similarity": d.similarity_pct,
+                     "ai": d.ai_pct, "ai_low": d.ai_below_threshold}
+                    for d in touched.values()],
+    }
